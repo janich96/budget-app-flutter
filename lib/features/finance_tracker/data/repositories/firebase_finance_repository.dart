@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fpdart/fpdart.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/accumulation_category.dart';
+import '../../domain/entities/finance_snapshot.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/entities/week_entry.dart';
 import '../../domain/repositories/i_finance_repository.dart';
@@ -197,5 +200,61 @@ class FirebaseFinanceRepository implements IFinanceRepository {
     } catch (e) {
       return left(ServerFailure('Failed to delete week entry: $e'));
     }
+  }
+
+  @override
+  Stream<FinanceSnapshot> watchFinanceSnapshot() async* {
+    final doc = _userDoc;
+    if (doc == null) {
+      yield const FinanceSnapshot(
+        expenseCategories: [],
+        accumulationCategories: [],
+        weekEntries: [],
+      );
+      return;
+    }
+
+    final controller = StreamController<FinanceSnapshot>();
+    List<ExpenseCategory> expenses = const [];
+    List<AccumulationCategory> accumulations = const [];
+    List<WeekEntry> entries = const [];
+
+    void emitIfReady() {
+      controller.add(
+        FinanceSnapshot(
+          expenseCategories: expenses,
+          accumulationCategories: accumulations,
+          weekEntries: entries,
+        ),
+      );
+    }
+
+    final expenseSub = doc.collection('expense_categories').snapshots().listen((snapshot) {
+      expenses = snapshot.docs
+          .map((d) => ExpenseCategoryModel.fromJson(d.data()).toEntity())
+          .toList();
+      emitIfReady();
+    });
+
+    final accumulationSub = doc.collection('accumulation_categories').snapshots().listen((snapshot) {
+      accumulations = snapshot.docs
+          .map((d) => AccumulationCategoryModel.fromJson(d.data()).toEntity())
+          .toList();
+      emitIfReady();
+    });
+
+    final entriesSub = doc.collection('week_entries').snapshots().listen((snapshot) {
+      entries = snapshot.docs.map((d) => WeekEntryModel.fromJson(d.data()).toEntity()).toList();
+      emitIfReady();
+    });
+
+    controller.onCancel = () async {
+      await expenseSub.cancel();
+      await accumulationSub.cancel();
+      await entriesSub.cancel();
+      await controller.close();
+    };
+
+    yield* controller.stream;
   }
 }

@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'core/di/injection.dart';
+import 'core/l10n/locale_cubit.dart';
 import 'core/router/app_router.dart';
 import 'features/auth/domain/repositories/i_auth_repository.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
@@ -49,6 +50,9 @@ class MyApp extends StatelessWidget {
           create: (_) => getIt<ThemeCubit>(),
         ),
         BlocProvider(
+          create: (_) => getIt<LocaleCubit>(),
+        ),
+        BlocProvider(
           create: (_) => AuthCubit(getIt<IAuthRepository>()),
         ),
         BlocProvider(
@@ -57,22 +61,26 @@ class MyApp extends StatelessWidget {
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
-          return MaterialApp.router(
-            title: 'Budget App',
-            themeMode: themeMode,
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
-            routerConfig: appRouter,
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: const [
-              Locale('ru', 'RU'),
-              Locale('en', 'US'),
-            ],
-            locale: const Locale('ru', 'RU'),
+          return BlocBuilder<LocaleCubit, Locale>(
+            builder: (context, locale) {
+              return MaterialApp.router(
+                title: 'Budget Tracker',
+                themeMode: themeMode,
+                theme: AppTheme.lightTheme,
+                darkTheme: AppTheme.darkTheme,
+                routerConfig: appRouter,
+                localizationsDelegates: const [
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [
+                  Locale('ru'),
+                  Locale('en'),
+                ],
+                locale: locale,
+              );
+            },
           );
         },
       ),

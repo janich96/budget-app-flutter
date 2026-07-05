@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../l10n/app_localizations.dart';
+
 class MainShell extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -42,8 +44,45 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final size = MediaQuery.of(context).size;
     final isWide = size.width > 700;
+
+    final destinations = [
+      NavigationRailDestination(
+        icon: const Icon(Icons.dashboard_outlined),
+        selectedIcon: const Icon(Icons.dashboard),
+        label: Text(l10n.dashboard),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.add_circle_outline),
+        selectedIcon: const Icon(Icons.add_circle),
+        label: Text(l10n.expense),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.category_outlined),
+        selectedIcon: const Icon(Icons.category),
+        label: Text(l10n.categories),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.history_outlined),
+        selectedIcon: const Icon(Icons.history),
+        label: Text(l10n.history),
+      ),
+      NavigationRailDestination(
+        icon: const Icon(Icons.settings_outlined),
+        selectedIcon: const Icon(Icons.settings),
+        label: Text(l10n.settings),
+      ),
+    ];
+
+    final bottomDestinations = [
+      NavigationDestination(icon: const Icon(Icons.dashboard_outlined), selectedIcon: const Icon(Icons.dashboard), label: l10n.dashboard),
+      NavigationDestination(icon: const Icon(Icons.add_circle_outline), selectedIcon: const Icon(Icons.add_circle), label: l10n.expense),
+      NavigationDestination(icon: const Icon(Icons.category_outlined), selectedIcon: const Icon(Icons.category), label: l10n.categories),
+      NavigationDestination(icon: const Icon(Icons.history_outlined), selectedIcon: const Icon(Icons.history), label: l10n.history),
+      NavigationDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: l10n.settings),
+    ];
 
     return Scaffold(
       body: Row(
@@ -58,33 +97,7 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
                 );
               },
               labelType: NavigationRailLabelType.all,
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.dashboard_outlined),
-                  selectedIcon: Icon(Icons.dashboard),
-                  label: Text('Сводка'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.add_circle_outline),
-                  selectedIcon: Icon(Icons.add_circle),
-                  label: Text('Расход'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.category_outlined),
-                  selectedIcon: Icon(Icons.category),
-                  label: Text('Категории'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.history_outlined),
-                  selectedIcon: Icon(Icons.history),
-                  label: Text('История'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.settings_outlined),
-                  selectedIcon: Icon(Icons.settings),
-                  label: Text('Настройки'),
-                ),
-              ],
+              destinations: destinations,
             ),
           if (isWide) const VerticalDivider(thickness: 1, width: 1),
           Expanded(
@@ -105,33 +118,7 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
                   initialLocation: index == widget.navigationShell.currentIndex,
                 );
               },
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.dashboard_outlined),
-                  selectedIcon: Icon(Icons.dashboard),
-                  label: 'Сводка',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.add_circle_outline),
-                  selectedIcon: Icon(Icons.add_circle),
-                  label: 'Расход',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.category_outlined),
-                  selectedIcon: Icon(Icons.category),
-                  label: 'Категории',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.history_outlined),
-                  selectedIcon: Icon(Icons.history),
-                  label: 'История',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.settings_outlined),
-                  selectedIcon: Icon(Icons.settings),
-                  label: 'Настройки',
-                ),
-              ],
+              destinations: bottomDestinations,
             ),
     );
   }

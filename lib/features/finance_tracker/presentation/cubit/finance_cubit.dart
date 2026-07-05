@@ -1,16 +1,26 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../domain/repositories/i_finance_repository.dart';
-import 'finance_state.dart';
-// import domain entities indirectly via state
+
 import '../../domain/entities/accumulation_category.dart';
 import '../../domain/entities/expense_category.dart';
+import '../../domain/entities/finance_snapshot.dart';
 import '../../domain/entities/week_entry.dart';
+import '../../domain/repositories/i_finance_repository.dart';
+import 'finance_state.dart';
 
 class FinanceCubit extends Cubit<FinanceState> {
   final IFinanceRepository _repository;
+  StreamSubscription<FinanceSnapshot>? _subscription;
 
   FinanceCubit(this._repository) : super(const FinanceState.initial()) {
-    loadData();
+    _watchFinanceSnapshot();
+  }
+
+  @override
+  Future<void> close() async {
+    await _subscription?.cancel();
+    return super.close();
   }
 
   Future<void> loadData() async {
@@ -21,11 +31,11 @@ class FinanceCubit extends Cubit<FinanceState> {
     final entriesResult = await _repository.getAllWeekEntries();
 
     expensesResult.fold(
-      (f) => emit(FinanceState.error(f.message)),
+      (failure) => emit(FinanceState.error(failure.message)),
       (expenses) => accumulationsResult.fold(
-        (f) => emit(FinanceState.error(f.message)),
+        (failure) => emit(FinanceState.error(failure.message)),
         (accumulations) => entriesResult.fold(
-          (f) => emit(FinanceState.error(f.message)),
+          (failure) => emit(FinanceState.error(failure.message)),
           (entries) => emit(FinanceState.loaded(
             expenseCategories: expenses,
             accumulationCategories: accumulations,
@@ -36,25 +46,92 @@ class FinanceCubit extends Cubit<FinanceState> {
     );
   }
 
-  Future<void> addWeekEntry(WeekEntry entry) async {
-    final currentState = state;
-    if (currentState.maybeMap(loaded: (_) => false, orElse: () => true)) {
+  void _watchFinanceSnapshot() {
+    _subscription?.cancel();
+    _subscription = _repository.watchFinanceSnapshot().listen(
+      (snapshot) {
+        emit(FinanceState.loaded(
+          expenseCategories: snapshot.expenseCategories,
+          accumulationCategories: snapshot.accumulationCategories,
+          weekEntries: snapshot.weekEntries,
+        ));
+      },
+      onError: (error) {
+        emit(FinanceState.error(error.toString()));
+      },
+    );
+  }
+
+  FinanceSnapshot? get _snapshot => state.maybeMap(
+        loaded: (loaded) => FinanceSnapshot(
+          expenseCategories: List.of(loaded.expenseCategories),
+          accumulationCategories: List.of(loaded.accumulationCategories),
+          weekEntries: List.of(loaded.weekEntries),
+        ),
+        orElse: () => null,
+      );
+
+  void _emitSnapshot(FinanceSnapshot snapshot) {
+    emit(FinanceState.loaded(
+      expenseCategories: snapshot.expenseCategories,
+      accumulationCategories: snapshot.accumulationCategories,
+      weekEntries: snapshot.weekEntries,
+    ));
+  }
+
+  void _updateSnapshot({
+    required List<ExpenseCategory> Function(List<ExpenseCategory>) updateExpenses,
+    required List<AccumulationCategory> Function(List<AccumulationCategory>) updateAccumulations,
+    required List<WeekEntry> Function(List<WeekEntry>) updateEntries,
+  }) {
+    final snapshot = _snapshot;
+    if (snapshot == null) {
+      loadData();
       return;
     }
-    emit(const FinanceState.loading());
+
+    _emitSnapshot(
+      FinanceSnapshot(
+        expenseCategories: updateExpenses(snapshot.expenseCategories),
+        accumulationCategories: updateAccumulations(snapshot.accumulationCategories),
+        weekEntries: updateEntries(snapshot.weekEntries),
+      ),
+    );
+  }
+
+  Future<void> addWeekEntry(WeekEntry entry) async {
+    if (_snapshot == null) return;
+
     final result = await _repository.addWeekEntry(entry);
     result.fold(
       (failure) => emit(FinanceState.error(failure.message)),
-      (_) => loadData(),
+      (_) => _updateSnapshot(
+        updateExpenses: (expenses) => expenses,
+        updateAccumulations: (accumulations) => accumulations,
+        updateEntries: (entries) {
+          final next = [...entries];
+          final index = next.indexWhere((item) => item.id == entry.id);
+          if (index == -1) {
+            next.add(entry);
+          } else {
+            next[index] = entry;
+          }
+          next.sort((a, b) => b.startDate.compareTo(a.startDate));
+          return next;
+        },
+      ),
     );
   }
 
   Future<void> deleteWeekEntry(String id) async {
-    emit(const FinanceState.loading());
     final result = await _repository.deleteWeekEntry(id);
     result.fold(
       (failure) => emit(FinanceState.error(failure.message)),
-      (_) => loadData(),
+      (_) => _updateSnapshot(
+        updateExpenses: (expenses) => expenses,
+        updateAccumulations: (accumulations) => accumulations,
+        updateEntries: (entries) => entries.where((entry) => entry.id != id).toList(),
+      ),
     );
   }
 
@@ -62,7 +139,21 @@ class FinanceCubit extends Cubit<FinanceState> {
     final result = await _repository.saveExpenseCategory(category);
     result.fold(
       (failure) => emit(FinanceState.error(failure.message)),
-      (_) => loadData(),
+      (_) => _updateSnapshot(
+        updateExpenses: (expenses) {
+          final next = [...expenses];
+          final index = next.indexWhere((item) => item.id == category.id);
+          if (index == -1) {
+            next.add(category);
+          } else {
+            next[index] = category;
+          }
+          next.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+          return next;
+        },
+        updateAccumulations: (accumulations) => accumulations,
+        updateEntries: (entries) => entries,
+      ),
     );
   }
 
@@ -70,7 +161,11 @@ class FinanceCubit extends Cubit<FinanceState> {
     final result = await _repository.deleteExpenseCategory(id);
     result.fold(
       (failure) => emit(FinanceState.error(failure.message)),
-      (_) => loadData(),
+      (_) => _updateSnapshot(
+        updateExpenses: (expenses) => expenses.where((category) => category.id != id).toList(),
+        updateAccumulations: (accumulations) => accumulations,
+        updateEntries: (entries) => entries,
+      ),
     );
   }
 
@@ -78,7 +173,21 @@ class FinanceCubit extends Cubit<FinanceState> {
     final result = await _repository.saveAccumulationCategory(category);
     result.fold(
       (failure) => emit(FinanceState.error(failure.message)),
-      (_) => loadData(),
+      (_) => _updateSnapshot(
+        updateExpenses: (expenses) => expenses,
+        updateAccumulations: (accumulations) {
+          final next = [...accumulations];
+          final index = next.indexWhere((item) => item.id == category.id);
+          if (index == -1) {
+            next.add(category);
+          } else {
+            next[index] = category;
+          }
+          next.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+          return next;
+        },
+        updateEntries: (entries) => entries,
+      ),
     );
   }
 
@@ -86,11 +195,19 @@ class FinanceCubit extends Cubit<FinanceState> {
     final result = await _repository.deleteAccumulationCategory(id);
     result.fold(
       (failure) => emit(FinanceState.error(failure.message)),
-      (_) => loadData(),
+      (_) => _updateSnapshot(
+        updateExpenses: (expenses) => expenses,
+        updateAccumulations: (accumulations) =>
+            accumulations.where((category) => category.id != id).toList(),
+        updateEntries: (entries) => entries,
+      ),
     );
   }
 
-  Future<void> subtractFromAccumulation(AccumulationCategory acc, double amount) async {
+  Future<void> subtractFromAccumulation(
+    AccumulationCategory acc,
+    double amount,
+  ) async {
     final updatedCategory = acc.copyWith(
       currentBalance: acc.currentBalance - amount,
     );
@@ -107,7 +224,7 @@ class FinanceCubit extends Cubit<FinanceState> {
   ) {
     double dynamicBalance = acc.currentBalance;
 
-    for (var entry in entries) {
+    for (final entry in entries) {
       entry.linksSnapshot.forEach((expenseId, linkedAccId) {
         if (linkedAccId == acc.id) {
           final limit = entry.limitsSnapshot[expenseId] ?? 0.0;
@@ -121,7 +238,6 @@ class FinanceCubit extends Cubit<FinanceState> {
       });
     }
 
-    // Не позволяем сумме опускаться ниже нуля
     return dynamicBalance < 0 ? 0 : dynamicBalance;
   }
 }

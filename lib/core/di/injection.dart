@@ -11,11 +11,13 @@ import '../../features/auth/data/repositories/firebase_auth_repository.dart';
 
 import '../../features/finance_tracker/domain/entities/accumulation_category.dart';
 import '../../features/finance_tracker/domain/entities/expense_category.dart';
+import '../../features/finance_tracker/domain/entities/finance_snapshot.dart';
 import '../../features/finance_tracker/domain/entities/week_entry.dart';
 import '../../features/finance_tracker/domain/repositories/i_finance_repository.dart';
 import '../../features/finance_tracker/data/repositories/firebase_finance_repository.dart';
 import '../../features/finance_tracker/data/repositories/local_finance_repository.dart';
 import '../theme/theme_cubit.dart';
+import '../l10n/locale_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -30,6 +32,9 @@ Future<void> configureDependencies() async {
 
   // 2. Theme Cubit
   getIt.registerFactory<ThemeCubit>(() => ThemeCubit(getIt<SharedPreferences>()));
+
+  // 2b. Locale Cubit
+  getIt.registerFactory<LocaleCubit>(() => LocaleCubit(getIt<SharedPreferences>()));
 
   // 3. Auth Repository
   getIt.registerLazySingleton<IAuthRepository>(
@@ -109,4 +114,8 @@ class AuthAwareFinanceRepository implements IFinanceRepository {
   @override
   Future<Either<Failure, Unit>> deleteWeekEntry(String id) =>
       _activeRepo.deleteWeekEntry(id);
+
+  @override
+  Stream<FinanceSnapshot> watchFinanceSnapshot() =>
+      _activeRepo.watchFinanceSnapshot();
 }

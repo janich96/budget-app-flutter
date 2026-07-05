@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/l10n/app_localizations.dart';
 import '../../domain/entities/accumulation_category.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/entities/week_entry.dart';
@@ -11,31 +13,26 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
-        title:
-            const Text('Сводка', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l10n.dashboard, style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: BlocBuilder<FinanceCubit, FinanceState>(
         builder: (context, state) {
           return state.maybeWhen(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (m) => Center(
-                child: Text('Ошибка: $m',
-                    style: const TextStyle(color: Colors.red))),
+            error: (m) => Center(child: Text(l10n.error(m), style: const TextStyle(color: Colors.red))),
             loaded: (expenses, accumulations, entries) {
               if (accumulations.isEmpty) {
-                return const Center(
-                    child: Text(
-                        'Нет категорий накоплений.\nДобавьте их во вкладке "Категории".'));
+                return Center(child: Text(l10n.noAccumulationCategories, textAlign: TextAlign.center));
               }
 
               double totalBalance = 0;
               final cubit = context.read<FinanceCubit>();
-              for (var acc in accumulations) {
-                totalBalance += cubit.calculateDynamicAccumulationBalance(
-                    acc, expenses, entries);
+              for (final acc in accumulations) {
+                totalBalance += cubit.calculateDynamicAccumulationBalance(acc, expenses, entries);
               }
 
               final sortedEntries = [...entries]..sort((a, b) => b.startDate.compareTo(a.startDate));
@@ -46,27 +43,17 @@ class DashboardScreen extends StatelessWidget {
                   _HeaderCard(totalBalance: totalBalance),
                   const SizedBox(height: 24),
                   if (sortedEntries.isNotEmpty) ...[
-                    Text(
-                      'Последний период',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
+                    Text(l10n.lastPeriod, style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 16),
-                    _WeeklyProgressCard(
-                      lastEntry: sortedEntries.first,
-                      expenses: expenses,
-                    ),
+                    _WeeklyProgressCard(lastEntry: sortedEntries.first, expenses: expenses),
                     const SizedBox(height: 24),
                   ],
-                  Text(
-                    'Мои накопления',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+                  Text(l10n.mySavings, style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 16),
                   ...accumulations.asMap().entries.map((entry) {
                     final index = entry.key;
                     final acc = entry.value;
-                    final calcBalance = cubit.calculateDynamicAccumulationBalance(
-                        acc, expenses, entries);
+                    final calcBalance = cubit.calculateDynamicAccumulationBalance(acc, expenses, entries);
 
                     return TweenAnimationBuilder<double>(
                       duration: Duration(milliseconds: 400 + (index * 100)),
@@ -75,10 +62,7 @@ class DashboardScreen extends StatelessWidget {
                       builder: (context, value, child) {
                         return Transform.translate(
                           offset: Offset(0, 20 * (1 - value)),
-                          child: Opacity(
-                            opacity: value,
-                            child: child,
-                          ),
+                          child: Opacity(opacity: value, child: child),
                         );
                       },
                       child: _AccumulationCard(
@@ -87,11 +71,11 @@ class DashboardScreen extends StatelessWidget {
                         onSubtract: () => _showSubtractDialog(context, acc),
                       ),
                     );
-                  }).toList(),
+                  }),
                 ],
               );
             },
-            orElse: () => const Center(child: Text('Инициализация...')),
+            orElse: () => Center(child: Text(l10n.loading)),
           );
         },
       ),
@@ -99,25 +83,23 @@ class DashboardScreen extends StatelessWidget {
   }
 
   void _showSubtractDialog(BuildContext context, AccumulationCategory acc) {
+    final l10n = AppLocalizations.of(context);
     final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Вычесть из "${acc.name}"'),
+        title: Text('${l10n.deductFrom} "${acc.name}"'),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Сумма',
+          decoration: InputDecoration(
+            labelText: l10n.amount,
             suffixText: '₽',
           ),
           autofocus: true,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           FilledButton(
             onPressed: () {
               final amount = double.tryParse(controller.text) ?? 0.0;
@@ -126,7 +108,7 @@ class DashboardScreen extends StatelessWidget {
               }
               Navigator.pop(context);
             },
-            child: const Text('Вычесть'),
+            child: Text(l10n.subtract),
           ),
         ],
       ),
@@ -141,6 +123,7 @@ class _WeeklyProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
     return Card(
@@ -152,8 +135,7 @@ class _WeeklyProgressCard extends StatelessWidget {
             ...lastEntry.expenses.entries.map((entry) {
               final cat = expenses.firstWhere(
                 (e) => e.id == entry.key,
-                orElse: () => ExpenseCategory(
-                    id: '', name: 'Удалено', limit: 0, colorValue: Colors.grey.value),
+                orElse: () => ExpenseCategory(id: '', name: l10n.removed, limit: 0, colorValue: Colors.grey.value),
               );
               final spent = entry.value;
               final limit = lastEntry.limitsSnapshot[entry.key] ?? 0.0;
@@ -169,10 +151,7 @@ class _WeeklyProgressCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(cat.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                        Text(
-                          '${spent.toStringAsFixed(0)} / ${limit.toStringAsFixed(0)} ₽',
-                          style: theme.textTheme.bodySmall,
-                        ),
+                        Text('${spent.toStringAsFixed(0)} / ${limit.toStringAsFixed(0)} ₽', style: theme.textTheme.bodySmall),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -188,9 +167,8 @@ class _WeeklyProgressCard extends StatelessWidget {
                   ],
                 ),
               );
-            }).toList(),
-            if (lastEntry.expenses.isEmpty)
-              const Center(child: Text('На этой неделе еще нет трат')),
+            }),
+            if (lastEntry.expenses.isEmpty) Center(child: Text(l10n.noWeeklyExpenses)),
           ],
         ),
       ),
@@ -204,6 +182,7 @@ class _HeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -229,13 +208,7 @@ class _HeaderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Общий баланс',
-            style: TextStyle(
-              color: isDark ? theme.colorScheme.onPrimaryContainer : Colors.white70,
-              fontSize: 16,
-            ),
-          ),
+          Text(l10n.generalBalance, style: TextStyle(color: isDark ? theme.colorScheme.onPrimaryContainer : Colors.white70, fontSize: 16)),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -273,6 +246,7 @@ class _AccumulationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final color = Color(acc.colorValue);
     final theme = Theme.of(context);
 
@@ -286,10 +260,7 @@ class _AccumulationCard extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.18),
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: color.withOpacity(0.18), shape: BoxShape.circle),
                   child: Icon(Icons.savings_outlined, color: color),
                 ),
                 const SizedBox(width: 16),
@@ -297,27 +268,17 @@ class _AccumulationCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(acc.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                       Text(
-                        acc.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        acc.description ?? 'Накопление',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-                        ),
+                        acc.description ?? l10n.addSavings,
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.textTheme.bodySmall?.color?.withOpacity(0.6)),
                       ),
                     ],
                   ),
                 ),
                 Text(
                   '${calcBalance.toStringAsFixed(0)} ₽',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: theme.textTheme.titleLarge?.copyWith(color: color, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -326,10 +287,7 @@ class _AccumulationCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Цель: ${acc.targetAmount.toStringAsFixed(0)} ₽',
-                    style: theme.textTheme.bodySmall,
-                  ),
+                  Text('${l10n.targetAmount}: ${acc.targetAmount.toStringAsFixed(0)} ₽', style: theme.textTheme.bodySmall),
                   Text(
                     '${((calcBalance / acc.targetAmount) * 100).clamp(0, 100).toStringAsFixed(1)}%',
                     style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
@@ -355,7 +313,7 @@ class _AccumulationCard extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: onSubtract,
                 icon: const Icon(Icons.remove_circle_outline, size: 18),
-                label: const Text('Списать'),
+                label: Text(l10n.subtract),
                 style: TextButton.styleFrom(
                   foregroundColor: color,
                   visualDensity: VisualDensity.compact,

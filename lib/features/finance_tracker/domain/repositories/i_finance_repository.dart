@@ -1,6 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 import '../../../../core/errors/failures.dart';
 import '../entities/accumulation_category.dart';
+import '../entities/finance_snapshot.dart';
 import '../entities/expense_category.dart';
 import '../entities/week_entry.dart';
 
@@ -21,4 +22,6 @@ abstract interface class IFinanceRepository {
   Future<Either<Failure, List<WeekEntry>>> getAllWeekEntries();
   Future<Either<Failure, Unit>> addWeekEntry(WeekEntry entry);
   Future<Either<Failure, Unit>> deleteWeekEntry(String id);
+
+  Stream<FinanceSnapshot> watchFinanceSnapshot();
 }

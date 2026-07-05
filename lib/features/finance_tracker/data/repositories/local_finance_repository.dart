@@ -3,6 +3,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/accumulation_category.dart';
+import '../../domain/entities/finance_snapshot.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/entities/week_entry.dart';
 import '../../domain/repositories/i_finance_repository.dart';
@@ -160,5 +161,16 @@ class LocalFinanceRepository implements IFinanceRepository {
     } catch (e) {
       return left(LocalStorageFailure('Failed to delete week entry: $e'));
     }
+  }
+
+  @override
+  Stream<FinanceSnapshot> watchFinanceSnapshot() async* {
+    yield FinanceSnapshot(
+      expenseCategories:
+          (await getExpenseCategories()).getOrElse((_) => const []),
+      accumulationCategories:
+          (await getAccumulationCategories()).getOrElse((_) => const []),
+      weekEntries: (await getAllWeekEntries()).getOrElse((_) => const []),
+    );
   }
 }

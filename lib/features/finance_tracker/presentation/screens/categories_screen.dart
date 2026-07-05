@@ -1,6 +1,8 @@
+import 'package:budget_app/core/l10n/app_localizations.dart';
+import 'package:budget_app/core/presentation/widgets/bouncy_tap.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:budget_app/core/presentation/widgets/bouncy_tap.dart';
+
 import '../../domain/entities/accumulation_category.dart';
 import '../../domain/entities/expense_category.dart';
 import '../cubit/finance_cubit.dart';
@@ -11,20 +13,21 @@ class CategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Категории', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(l10n.categories, style: const TextStyle(fontWeight: FontWeight.bold)),
           centerTitle: true,
           bottom: TabBar(
             dividerColor: Colors.transparent,
             indicatorSize: TabBarIndicatorSize.label,
             indicatorWeight: 3,
             splashBorderRadius: BorderRadius.circular(20),
-            tabs: const [
-              Tab(text: 'Траты'),
-              Tab(text: 'Накопления'),
+            tabs: [
+              Tab(text: l10n.expensesTab),
+              Tab(text: l10n.savingsTab),
             ],
           ),
         ),
@@ -32,7 +35,7 @@ class CategoriesScreen extends StatelessWidget {
           builder: (context, state) {
             return state.maybeWhen(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (m) => Center(child: Text('Ошибка: $m')),
+              error: (m) => Center(child: Text(l10n.error(m))),
               loaded: (expenses, accumulations, _) {
                 return TabBarView(
                   children: [
@@ -41,7 +44,7 @@ class CategoriesScreen extends StatelessWidget {
                   ],
                 );
               },
-              orElse: () => const Center(child: Text('Инициализация...')),
+              orElse: () => Center(child: Text(l10n.loading)),
             );
           },
         ),
@@ -60,18 +63,18 @@ class _ColorPicker extends StatelessWidget {
   });
 
   static const List<Color> _colors = [
-    Color(0xFF1E88E5), // Насыщенный синий
-    Color(0xFFE53935), // Яркий красный
-    Color(0xFF43A047), // Сочный зеленый
-    Color(0xFFFB8C00), // Оранжевый
-    Color(0xFF8E24AA), // Пурпурный
-    Color(0xFF00ACC1), // Циан
-    Color(0xFFD81B60), // Розовый
-    Color(0xFFF9A825), // Горчичный/Желтый
-    Color(0xFF3949AB), // Индиго
-    Color(0xFF00897B), // Тиловый
-    Color(0xFF5E35B1), // Глубокий фиолетовый
-    Color(0xFFF4511E), // Глубокий оранжевый
+    Color(0xFF1E88E5),
+    Color(0xFFE53935),
+    Color(0xFF43A047),
+    Color(0xFFFB8C00),
+    Color(0xFF8E24AA),
+    Color(0xFF00ACC1),
+    Color(0xFFD81B60),
+    Color(0xFFF9A825),
+    Color(0xFF3949AB),
+    Color(0xFF00897B),
+    Color(0xFF5E35B1),
+    Color(0xFFF4511E),
   ];
 
   @override
@@ -89,13 +92,9 @@ class _ColorPicker extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
-              border: isSelected
-                  ? Border.all(color: Colors.black, width: 3)
-                  : Border.all(color: Colors.grey.withOpacity(0.3)),
+              border: isSelected ? Border.all(color: Colors.black, width: 3) : Border.all(color: Colors.grey.withOpacity(0.3)),
             ),
-            child: isSelected
-                ? const Icon(Icons.check, color: Colors.white, size: 20)
-                : null,
+            child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
           ),
         );
       }).toList(),
@@ -114,6 +113,7 @@ class _ExpenseCategoriesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -131,6 +131,11 @@ class _ExpenseCategoriesList extends StatelessWidget {
             child: _ExpenseCategoryTile(category: e, accumulations: accumulations),
           );
         }),
+        if (expenses.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: Text(l10n.noExpenseCategories, textAlign: TextAlign.center)),
+          ),
         const SizedBox(height: 16),
         BouncyTap(
           onTap: () => _showEditExpenseDialog(context, null, accumulations),
@@ -138,7 +143,7 @@ class _ExpenseCategoriesList extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.add),
-              label: const Text('Добавить категорию трат'),
+              label: Text(l10n.addExpenseCategory),
             ),
           ),
         ),
@@ -146,17 +151,14 @@ class _ExpenseCategoriesList extends StatelessWidget {
     );
   }
 
-  void _showEditExpenseDialog(
-      BuildContext context, ExpenseCategory? existing, List<AccumulationCategory> accumulationCategories) {
+  void _showEditExpenseDialog(BuildContext context, ExpenseCategory? existing, List<AccumulationCategory> accumulationCategories) {
     showDialog(
       context: context,
       builder: (_) => _EditExpenseCategoryDialog(
         existing: existing,
         accumulationCategories: accumulationCategories,
         onSave: (category) => context.read<FinanceCubit>().saveExpenseCategory(category),
-        onDelete: existing != null
-            ? () => context.read<FinanceCubit>().deleteExpenseCategory(existing.id)
-            : null,
+        onDelete: existing != null ? () => context.read<FinanceCubit>().deleteExpenseCategory(existing.id) : null,
       ),
     );
   }
@@ -169,6 +171,7 @@ class _AccumulationCategoriesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -186,6 +189,11 @@ class _AccumulationCategoriesList extends StatelessWidget {
             child: _AccumulationCategoryTile(category: a),
           );
         }),
+        if (accumulations.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: Text(l10n.noSavingsCategories, textAlign: TextAlign.center)),
+          ),
         const SizedBox(height: 16),
         BouncyTap(
           onTap: () => _showEditAccumulationDialog(context, null),
@@ -193,7 +201,7 @@ class _AccumulationCategoriesList extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.add),
-              label: const Text('Добавить накопление'),
+              label: Text(l10n.addAccumulation),
             ),
           ),
         ),
@@ -207,9 +215,7 @@ class _AccumulationCategoriesList extends StatelessWidget {
       builder: (_) => _EditAccumulationCategoryDialog(
         existing: existing,
         onSave: (category) => context.read<FinanceCubit>().saveAccumulationCategory(category),
-        onDelete: existing != null
-            ? () => context.read<FinanceCubit>().deleteAccumulationCategory(existing.id)
-            : null,
+        onDelete: existing != null ? () => context.read<FinanceCubit>().deleteAccumulationCategory(existing.id) : null,
       ),
     );
   }
@@ -222,11 +228,11 @@ class _ExpenseCategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final linkedAcc = accumulations.cast<AccumulationCategory?>().firstWhere(
           (a) => a?.id == category.linkedAccumulationId,
           orElse: () => null,
         );
-
     final color = Color(category.colorValue);
     final theme = Theme.of(context);
 
@@ -236,18 +242,12 @@ class _ExpenseCategoryTile extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.18),
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color.withOpacity(0.18), shape: BoxShape.circle),
           child: Icon(Icons.payments_outlined, color: color),
         ),
-        title: Text(
-          category.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(category.name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(
-          'Лимит: ${category.limit.toStringAsFixed(0)} ₽ • ${linkedAcc?.name ?? "нет привязки"}',
+          '${l10n.limit}: ${category.limit.toStringAsFixed(0)} ₽ • ${linkedAcc?.name ?? l10n.noLink}',
           style: theme.textTheme.bodySmall,
         ),
         trailing: IconButton(
@@ -275,6 +275,7 @@ class _AccumulationCategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final color = Color(category.colorValue);
     final theme = Theme.of(context);
 
@@ -284,18 +285,12 @@ class _AccumulationCategoryTile extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.18),
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color.withOpacity(0.18), shape: BoxShape.circle),
           child: Icon(Icons.savings_outlined, color: color),
         ),
-        title: Text(
-          category.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(category.name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(
-          'Базовый баланс: ${category.currentBalance.toStringAsFixed(0)} ₽',
+          '${l10n.baseBalance}: ${category.currentBalance.toStringAsFixed(0)} ₽',
           style: theme.textTheme.bodySmall,
         ),
         trailing: IconButton(
@@ -371,18 +366,16 @@ class _EditExpenseCategoryDialogState extends State<_EditExpenseCategoryDialog> 
   }
 
   void _showAccumulationInfo() {
+    final l10n = AppLocalizations.of(context);
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Как работает привязка'),
-        content: const Text(
-          'Если выбрать накопление, то все деньги, которые останутся после фактических трат по этой категории, '
-          'будут автоматически уходить в указанное накопление.',
-        ),
+        title: Text(l10n.howLinkWorks),
+        content: Text(l10n.linkInfo),
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Понятно'),
+            child: Text(l10n.gotIt),
           ),
         ],
       ),
@@ -391,8 +384,9 @@ class _EditExpenseCategoryDialogState extends State<_EditExpenseCategoryDialog> 
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(widget.existing == null ? 'Добавить категорию' : 'Редактировать категорию'),
+      title: Text(widget.existing == null ? l10n.addCategory : l10n.editExpense),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -400,25 +394,23 @@ class _EditExpenseCategoryDialogState extends State<_EditExpenseCategoryDialog> 
           children: [
             TextField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(labelText: 'Название', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: l10n.name, border: const OutlineInputBorder()),
               textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _limitCtrl,
-              decoration: const InputDecoration(labelText: 'Недельный лимит (₽)', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: l10n.spendingLimit, border: const OutlineInputBorder()),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
               value: _selectedAccumulationId,
-              decoration: const InputDecoration(labelText: 'Привязать к накоплению', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: l10n.linkedToSavings, border: const OutlineInputBorder()),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Не выбран')),
-                ...widget.accumulationCategories.map(
-                  (a) => DropdownMenuItem(value: a.id, child: Text(a.name)),
-                ),
+                DropdownMenuItem(value: null, child: Text(l10n.noLink)),
+                ...widget.accumulationCategories.map((a) => DropdownMenuItem(value: a.id, child: Text(a.name))),
               ],
               onChanged: (v) => setState(() => _selectedAccumulationId = v),
             ),
@@ -430,20 +422,20 @@ class _EditExpenseCategoryDialogState extends State<_EditExpenseCategoryDialog> 
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Если выбрать накопление, остаток после трат по этой категории будет уходить туда.',
+                    l10n.linkInfo,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
                 IconButton(
                   visualDensity: VisualDensity.compact,
-                  tooltip: 'Как работает привязка',
+                  tooltip: l10n.howLinkWorks,
                   onPressed: _showAccumulationInfo,
                   icon: const Icon(Icons.help_outline, size: 18),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            const Text('Выберите цвет:', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(l10n.color, style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             _ColorPicker(
               selectedColor: _selectedColorValue,
@@ -459,10 +451,10 @@ class _EditExpenseCategoryDialogState extends State<_EditExpenseCategoryDialog> 
               widget.onDelete!();
               Navigator.pop(context);
             },
-            child: const Text('Удалить', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
-        FilledButton(onPressed: _save, child: const Text('Сохранить')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        FilledButton(onPressed: _save, child: Text(l10n.save)),
       ],
     );
   }
@@ -519,8 +511,9 @@ class _EditAccumulationCategoryDialogState extends State<_EditAccumulationCatego
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(widget.existing == null ? 'Добавить накопление' : 'Редактировать накопление'),
+      title: Text(widget.existing == null ? l10n.addSavings : l10n.editSavingsCategory),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -528,25 +521,25 @@ class _EditAccumulationCategoryDialogState extends State<_EditAccumulationCatego
           children: [
             TextField(
               controller: _nameCtrl,
-              decoration: const InputDecoration(labelText: 'Название', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: l10n.name, border: const OutlineInputBorder()),
               textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _balanceCtrl,
-              decoration: const InputDecoration(labelText: 'Текущий баланс (₽)', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: l10n.currentBalance, border: const OutlineInputBorder()),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _targetCtrl,
-              decoration: const InputDecoration(labelText: 'Целевая сумма (₽)', hintText: '0 - без цели', border: OutlineInputBorder()),
+              decoration: InputDecoration(labelText: l10n.targetAmount, hintText: l10n.noTarget, border: const OutlineInputBorder()),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               onSubmitted: (_) => _save(),
             ),
             const SizedBox(height: 16),
-            const Text('Выберите цвет:', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(l10n.color, style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             _ColorPicker(
               selectedColor: _selectedColorValue,
@@ -562,10 +555,10 @@ class _EditAccumulationCategoryDialogState extends State<_EditAccumulationCatego
               widget.onDelete!();
               Navigator.pop(context);
             },
-            child: const Text('Удалить', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
-        FilledButton(onPressed: _save, child: const Text('Сохранить')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        FilledButton(onPressed: _save, child: Text(l10n.save)),
       ],
     );
   }
