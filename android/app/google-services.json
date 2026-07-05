@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1022510105024",
+    "project_id": "budget-app-flutter-1678f",
+    "storage_bucket": "budget-app-flutter-1678f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1022510105024:android:a8b46d2b6938d11345c825",
+        "android_client_info": {
+          "package_name": "com.antigravity.budget.budget_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1022510105024-22gbg4ecqlrh7q7r9km1hcucn8kjjf2v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.antigravity.budget.budget_app",
+            "certificate_hash": "21d54d20ee0e23b96aad7aad31f65af8efa9bd58"
+          }
+        },
+        {
+          "client_id": "1022510105024-rt9sogsrgso2ribikdglfavtas0oglcf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7Efr2Pxz-qrUaKY1YKFvksp3dqqCwdk0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1022510105024-rt9sogsrgso2ribikdglfavtas0oglcf.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1022510105024-904rm7dgudq0ceog98o1lou0i89kbqoh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.antigravity.budget.budgetApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
