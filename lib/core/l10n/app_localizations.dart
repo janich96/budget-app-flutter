@@ -81,8 +81,10 @@ class AppLocalizations {
       };
 
   String get noAccumulationCategories => switch (language) {
-        AppLanguage.ru => 'Нет категорий накоплений.\nДобавьте их во вкладке "Категории".',
-        AppLanguage.en => 'No accumulation categories yet.\nAdd them in the "Categories" tab.',
+        AppLanguage.ru =>
+          'Нет категорий накоплений.\nДобавьте их во вкладке "Категории".',
+        AppLanguage.en =>
+          'No accumulation categories yet.\nAdd them in the "Categories" tab.',
       };
 
   String get lastPeriod => switch (language) {
@@ -231,8 +233,8 @@ class AppLocalizations {
       };
 
   String get noExpenseCategories => switch (language) {
-        AppLanguage.ru => 'Нет категорий трат. Добавьте их в настройках.',
-        AppLanguage.en => 'No expense categories yet. Add them in settings.',
+        AppLanguage.ru => 'Нет категорий трат. Добавьте их в Категориях.',
+        AppLanguage.en => 'No expense categories yet. Add them in Categories.',
       };
 
   String get noSavingsCategories => switch (language) {
@@ -252,9 +254,9 @@ class AppLocalizations {
 
   String get linkInfo => switch (language) {
         AppLanguage.ru =>
-            'Если выбрать накопление, то все деньги, которые останутся после фактических трат по этой категории, будут автоматически уходить в указанное накопление.',
+          'Если выбрать накопление, то все деньги, которые останутся после фактических трат по этой категории, будут автоматически уходить в указанное накопление.',
         AppLanguage.en =>
-            'If you choose a savings category, all remaining money after actual expenses in this category will automatically go to that savings category.',
+          'If you choose a savings category, all remaining money after actual expenses in this category will automatically go to that savings category.',
       };
 
   String get gotIt => switch (language) {
@@ -373,8 +375,10 @@ class AppLocalizations {
       };
 
   String get noHistoryYet => switch (language) {
-        AppLanguage.ru => 'История пуста.\nДобавьте первую запись в разделе «Расход».',
-        AppLanguage.en => 'History is empty.\nAdd your first entry in the Expense section.',
+        AppLanguage.ru =>
+          'История пуста.\nДобавьте первую запись в разделе «Расход».',
+        AppLanguage.en =>
+          'History is empty.\nAdd your first entry in the Expense section.',
       };
 
   String get historyTitle => switch (language) {
@@ -394,7 +398,8 @@ class AppLocalizations {
 
   String get confirmDeleteRecord => switch (language) {
         AppLanguage.ru => 'Вы уверены, что хотите удалить запись за период',
-        AppLanguage.en => 'Are you sure you want to delete the record for the period',
+        AppLanguage.en =>
+          'Are you sure you want to delete the record for the period',
       };
 
   String get recordDeleted => switch (language) {
@@ -413,8 +418,10 @@ class AppLocalizations {
       };
 
   String get emptySavings => switch (language) {
-        AppLanguage.ru => 'Нет категорий накоплений.\nДобавьте их во вкладке "Категории".',
-        AppLanguage.en => 'No savings categories yet.\nAdd them in the "Categories" tab.',
+        AppLanguage.ru =>
+          'Нет категорий накоплений.\nДобавьте их во вкладке "Категории".',
+        AppLanguage.en =>
+          'No savings categories yet.\nAdd them in the "Categories" tab.',
       };
 
   String get targetAmount => switch (language) {
